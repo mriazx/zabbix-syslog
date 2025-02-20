@@ -58,17 +58,19 @@ cp cron.d/zabbix_syslog_create_urls /etc/cron.d
 ```
 
 ## rsyslog
-add file /etc/rsyslog.d/zabbix_rsyslog.conf with contents:  
+add file /etc/rsyslog.d/00_zabbix_rsyslog.conf with contents:  
 ```
 # provides UDP syslog reception
-$ModLoad imudp
-$UDPServerRun 514
+module(load="imudp")
+input(type="imudp" port="514")
 
 #enables omrpog module
-$ModLoad omprog
+module(load="omprog")
 
+#dfine template
 $template RFC3164fmt,"<%PRI%>%TIMESTAMP% %HOSTNAME% %syslogtag%%msg%"
 $template network-fmt,"%TIMESTAMP:::date-rfc3339% [%fromhost-ip%] %pri-text% %syslogtag%%msg%\n"
+#$template network-fmt, "%fromhost%||%syslogfacility%||%syslogpriority%||%syslogseverity%||%syslogtag%||%$year%-%$month%-%$day% %timegenerated:8:25%||%msg%||%programname%\n"
 
 #exclude unwanted messages(examples):
 :msg, contains, "Child connection from" stop
@@ -76,7 +78,9 @@ $template network-fmt,"%TIMESTAMP:::date-rfc3339% [%fromhost-ip%] %pri-text% %sy
 :msg, contains, "password auth succeeded for 'ubnt' from" stop
 :msg, contains, "exit before auth: Exited normally" stop
 if $fromhost-ip != '127.0.0.1' then {
-        action(type="omprog" binary="/etc/zabbix/scripts/zabbix_syslog_lkp_host.pl" template="network-fmt")
+        action(type="omprog"
+		       binary="/etc/zabbix/scripts/zabbix_syslog_lkp_host.pl"
+			   template="network-fmt")
         stop
 }
 ```
