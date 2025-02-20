@@ -28,7 +28,7 @@ my %Config = $conf->getall;
 
 #Authenticate yourself
 my $url = $Config{'url'} || die "URL is missing in zabbix_syslog.cfg\n";
-my $user = $Config{'user'} || die "API user is missing in zabbix_syslog.cfg\n";
+my $username = $Config{'username'} || die "API username is missing in zabbix_syslog.cfg\n";
 my $password = $Config{'password'} || die "API user password is missing in zabbix_syslog.cfg\n";
 my $server = $Config{'server'} || die "server hostname is missing in zabbix_syslog.cfg\n";
 my $zbx;
@@ -61,7 +61,7 @@ while (defined(my $message = <>)) {
 
         my $result;
 
-        $zbx = ZabbixAPI->new( { api_url => $url, username => $user, password => $password } );
+        $zbx = ZabbixAPI->new( { api_url => $url, username => $username, password => $password } );
         $zbx->login();
 
 
@@ -82,24 +82,29 @@ while (defined(my $message = <>)) {
             }#check if $hostid already is in array then skip(next)
             else { push @hosts_found, $hostid; }
 
-            #now get hostname
+            # Now get hostname
             if ( get_zbx_trapper_syslogid_by_hostid($hostid) ) {
 
+                # Fetch host details for the given hostid
                 my $result = host_get($hostid);
 
-                #return hostname if possible
-                if ( $result->{'host'} ) {
+                # Check if the result is defined and contains 'host'
+                if ( defined($result) && exists $result->{'host'} && $result->{'host'} ) {
 
-                    if ( $result->{'proxy_hostid'} == 0 )    #check if host monitored directly or via proxy
-                    {
-                        #lease $server as is
-                    }
-                    else {
-                        #assume that rsyslogd and zabbix_proxy are on the same server
+                    # Check if 'proxy_hostid' is defined and compare it to 0
+                    if ( defined($result->{'proxy_hostid'}) && $result->{'proxy_hostid'} == 0 ) {
+                        # If the host is monitored directly, leave $server as is
+                    } else {
+                        # If the host is monitored via a proxy, assume that rsyslogd and zabbix_proxy are on the same server
                         $server = 'localhost';
                     }
+
+                    # Set the hostname to the value fetched from the API
                     $hostname = $result->{'host'};
+                } else {
+                    warn "Failed to retrieve hostname for hostid $hostid\n";
                 }
+
                 last;
             }
 
