@@ -21,7 +21,7 @@ my %Config = $conf->getall;
 
 #Authenticate yourself
 my $url      = $Config{'url'} || die "URL is missing in zabbix_syslog.cfg\n";
-my $user     = $Config{'user'} || die "API user is missing in zabbix_syslog.cfg\n";
+my $username     = $Config{'username'} || die "API user is missing in zabbix_syslog.cfg\n";
 my $password = $Config{'password'}   || die "API user password is missing in zabbix_syslog.cfg\n";
 my $server = $Config{'server'}   || die "server hostname is missing in zabbix_syslog.cfg\n";
 
@@ -29,7 +29,7 @@ my $debug = $Config{'debug'};
 my ( $authID, $response, $json );
 
 
-my $zbx = ZabbixAPI->new( { api_url => $url, username => $user, password => $password } );
+my $zbx = ZabbixAPI->new( { api_url => $url, username => $username, password => $password } );
 $zbx->login();
 
 my $syslog_url_base = 'history.php?action=showvalues';
